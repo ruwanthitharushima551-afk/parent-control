@@ -56,12 +56,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 1e8, // 100MB
 });
 
-// Password auth middleware
-io.use((socket, next) => {
-  const pw = socket.handshake.auth.password;
-  if (!ADMIN_PASSWORD || pw === ADMIN_PASSWORD) return next();
-  next(new Error('auth_failed'));
-});
+
 
 io.on('connection', (socket) => {
   console.log('[Dashboard] Connected:', socket.id);
