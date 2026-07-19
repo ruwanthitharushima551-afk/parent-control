@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════════════════
 
 // ── CONFIG: Update this after deploying backend to Render ───────────
-const BACKEND_URL = 'https://parent-control-production.up.railway.app'; // ← change this
+const BACKEND_URL = 'https://parent-control-production.up.railway.app';
 const ADMIN_PASSWORD_KEY = 'pc_admin_pw';
 
 // ── State ────────────────────────────────────────────────────────────
