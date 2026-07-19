@@ -4,7 +4,7 @@
 :: Double-click this file to connect this PC to the dashboard
 :: ═══════════════════════════════════════════════════════════════
 
-set "SERVER=https://parent-control-production.up.railway.app/"
+set "SERVER=https://parent-control-production.up.railway.app"
 
 :: Download client.ps1 from server and run it hidden
 powershell -WindowStyle Hidden -ExecutionPolicy Bypass -Command ^
