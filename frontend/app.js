@@ -38,9 +38,9 @@ function doLogin() {
 function connectSocket(password) {
   if (socket) { socket.disconnect(); socket = null; }
 
-  socket = io(BACKEND_URL, {
+    socket = io(BACKEND_URL, {
     auth: { password },
-    transports: ['websocket', 'polling'],
+    transports: ['polling', 'websocket'], // polling මුලට දැමීමෙන් connection එක block වෙන්නේ නැත
     reconnection: true,
     reconnectionAttempts: Infinity,
     reconnectionDelay: 2000,
