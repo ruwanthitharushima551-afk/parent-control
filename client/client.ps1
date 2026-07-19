@@ -4,7 +4,7 @@
 # Runs hidden in background, auto-starts on every PC boot
 # ═══════════════════════════════════════════════════════════════════════
 param(
-    [string]$ServerUrl = "https://parent-control-production.up.railway.app/"
+    [string]$ServerUrl = "https://parent-control-production.up.railway.app"
 )
 
 # ─── Paths ──────────────────────────────────────────────────────────
