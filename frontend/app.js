@@ -1,13 +1,13 @@
 // ═══════════════════════════════════════════════════════════════════
-// ParentControl Dashboard — app.js (No Password Version)
+// ParentControl Dashboard — app.js (No Password Version 1.1)
 // ═══════════════════════════════════════════════════════════════════
 
 const BACKEND_URL = 'https://parent-control-production.up.railway.app';
 
 let socket = null;
-let devices = {};             
-let currentStreamId   = null; 
-let currentStreamType = null; 
+let devices = {};             // id -> device object
+let currentStreamId   = null; // deviceId being streamed
+let currentStreamType = null; // 'camera' or 'screen'
 let mpegtsPlayer = null;
 
 // On page load - Auto connect directly
@@ -27,6 +27,7 @@ function connectSocket() {
     reconnectionDelayMax: 10000,
   });
 
+  // Connected
   socket.on('connect', () => {
     setConnected(true);
     document.getElementById('app').classList.remove('hidden');
@@ -44,6 +45,7 @@ function connectSocket() {
     toast('Reconnected!', 'success');
   });
 
+  // Device events
   socket.on('device_list', list => {
     devices = {};
     document.getElementById('device-grid').innerHTML = '';
@@ -72,6 +74,7 @@ function connectSocket() {
     }
   });
 
+  // Media events
   socket.on('screenshot', ({ deviceId, data }) => {
     if (!devices[deviceId]) return;
     devices[deviceId].screenshot = data;
@@ -104,6 +107,7 @@ function connectSocket() {
   });
 }
 
+// Device Management
 function addOrUpdateDevice(d) {
   devices[d.id] = { ...d };
   const old = document.getElementById(`card-${d.id}`);
@@ -203,6 +207,7 @@ function refreshCounts() {
   }
 }
 
+// Commands
 function cmd(deviceId, action) {
   if (!socket?.connected) { toast('Not connected', 'error'); return; }
   const d = devices[deviceId];
@@ -219,6 +224,7 @@ function cmd(deviceId, action) {
   toast(labels[action] || action, 'info');
 }
 
+// Live Stream
 function toggleStream(deviceId, type) {
   const isCamera = (type === 'camera');
   const myId = currentStreamId === deviceId && currentStreamType === type;
