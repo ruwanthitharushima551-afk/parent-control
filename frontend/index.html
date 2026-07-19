@@ -4,37 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ParentControl — Remote Monitor</title>
-  <meta name="description" content="Real-time remote monitoring dashboard. Monitor connected Windows devices from anywhere." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-<!-- ░░ LOGIN OVERLAY ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ -->
-<div id="login-overlay">
-  <div class="login-card glass">
-    <div class="login-logo">
-      <div class="logo-glow">🔒</div>
-      <h1>ParentControl</h1>
-      <p>Remote Monitoring Dashboard</p>
-    </div>
-    <div class="login-form">
-      <div class="field">
-        <label>Admin Password</label>
-        <input id="pw-input" type="password" placeholder="Enter password…" autocomplete="off" />
-      </div>
-      <button class="btn-login" id="login-btn" onclick="doLogin()">
-        Access Dashboard
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-      </button>
-      <p class="login-hint" id="login-error"></p>
-    </div>
-  </div>
-</div>
-
-<!-- ░░ MAIN APP ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ -->
-<div id="app" class="hidden">
+<!-- MAIN APP (Auto Open - No Login Overlay) -->
+<div id="app">
 
   <!-- Header -->
   <header class="header glass">
@@ -87,7 +64,7 @@
   </main>
 </div>
 
-<!-- ░░ SCREENSHOT MODAL ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ -->
+<!-- SCREENSHOT MODAL -->
 <div id="ss-modal" class="modal hidden">
   <div class="modal-bg" onclick="closeModal('ss-modal')"></div>
   <div class="modal-box glass">
@@ -102,7 +79,7 @@
   </div>
 </div>
 
-<!-- ░░ LIVE STREAM MODAL ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ -->
+<!-- LIVE STREAM MODAL -->
 <div id="live-modal" class="modal hidden">
   <div class="modal-bg" onclick="stopStream()"></div>
   <div class="modal-box glass wide">
@@ -121,10 +98,8 @@
   </div>
 </div>
 
-<!-- ░░ TOASTS ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ -->
 <div id="toasts"></div>
 
-<!-- Scripts -->
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mpegts.js/dist/mpegts.min.js"></script>
 <script src="app.js"></script>
