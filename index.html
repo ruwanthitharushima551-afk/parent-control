@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ParentControl — Remote Monitor</title>
+  <meta name="description" content="Real-time remote monitoring dashboard. Monitor connected Windows devices from anywhere." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ░░ LOGIN OVERLAY ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ -->
+<div id="login-overlay">
+  <div class="login-card glass">
+    <div class="login-logo">
+      <div class="logo-glow">🔒</div>
+      <h1>ParentControl</h1>
+      <p>Remote Monitoring Dashboard</p>
+    </div>
+    <div class="login-form">
+      <div class="field">
+        <label>Admin Password</label>
+        <input id="pw-input" type="password" placeholder="Enter password…" autocomplete="off" />
+      </div>
+      <button class="btn-login" id="login-btn" onclick="doLogin()">
+        Access Dashboard
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+      <p class="login-hint" id="login-error"></p>
+    </div>
+  </div>
+</div>
+
+<!-- ░░ MAIN APP ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ -->
+<div id="app" class="hidden">
+
+  <!-- Header -->
+  <header class="header glass">
+    <div class="header-brand">
+      <span class="brand-icon">🔒</span>
+      <div>
+        <div class="brand-name">ParentControl</div>
+        <div class="brand-sub">Remote Monitor</div>
+      </div>
+    </div>
+
+    <div class="header-center">
+      <div class="stat-pill online">
+        <span class="dot-pulse"></span>
+        <span id="online-count">0</span>&nbsp;Online
+      </div>
+      <div class="stat-pill total">
+        <span id="total-count">0</span>&nbsp;Devices
+      </div>
+    </div>
+
+    <div class="header-right">
+      <div id="conn-badge" class="conn-badge disconnected">
+        <span class="conn-dot"></span>
+        <span id="conn-text">Connecting…</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- Empty state -->
+    <div id="empty-state" class="empty-state">
+      <div class="empty-emoji">🖥️</div>
+      <h2>No Devices Connected</h2>
+      <p>Run the command below on any Windows PC to connect it here. The device will appear instantly.</p>
+      <div class="cmd-box glass">
+        <div class="cmd-top">
+          <span class="cmd-label">⚡ Quick Connect — paste in CMD or run connect.bat</span>
+          <button class="btn-copy" id="copy-btn" onclick="copyCmd()">Copy</button>
+        </div>
+        <code id="cmd-text">Loading…</code>
+      </div>
+    </div>
+
+    <!-- Device Grid -->
+    <div id="device-grid" class="device-grid hidden"></div>
+
+  </main>
+</div>
+
+<!-- ░░ SCREENSHOT MODAL ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ -->
+<div id="ss-modal" class="modal hidden">
+  <div class="modal-bg" onclick="closeModal('ss-modal')"></div>
+  <div class="modal-box glass">
+    <div class="modal-head">
+      <h3 id="ss-title">Screenshot</h3>
+      <button class="btn-close" onclick="closeModal('ss-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <img id="ss-img" src="" alt="Screenshot" />
+      <p id="ss-meta" class="img-meta"></p>
+    </div>
+  </div>
+</div>
+
+<!-- ░░ LIVE STREAM MODAL ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ -->
+<div id="live-modal" class="modal hidden">
+  <div class="modal-bg" onclick="stopStream()"></div>
+  <div class="modal-box glass wide">
+    <div class="modal-head">
+      <h3 id="live-title">Live Stream</h3>
+      <div class="live-badge"><span class="dot-pulse red"></span>LIVE</div>
+      <button class="btn-close" onclick="stopStream()">✕</button>
+    </div>
+    <div class="modal-body">
+      <video id="live-video" autoplay muted playsinline controls></video>
+      <div class="stream-bar">
+        <div id="stream-status" class="stream-status">Connecting to device…</div>
+        <button class="btn-stop" onclick="stopStream()">⏹ Stop Stream</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ░░ TOASTS ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ -->
+<div id="toasts"></div>
+
+<!-- Scripts -->
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mpegts.js/dist/mpegts.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
