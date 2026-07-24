@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════
-// ParentControl Dashboard — app.js (No Password Version 1.1)
+// ParentControl Dashboard — app.js (No Password Version)
 // ═══════════════════════════════════════════════════════════════════
 
 const BACKEND_URL = 'https://parent-control-production.up.railway.app';
