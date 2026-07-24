@@ -17,23 +17,32 @@ const app    = express();
 const server = http.createServer(app);
 const PORT   = process.env.PORT || 3000;
 
+// ─── Config (use env vars on Render) ─────────────────────────────────
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'parent123';
+
 // ─── Middleware ───────────────────────────────────────────────────────
 app.use(cors({ origin: '*' }));
 app.use(express.json({ limit: '50mb' }));
 
 // ─── Serve client.ps1 for download ───────────────────────────────────
 app.get('/download/client.ps1', (req, res) => {
-  const clientPath = path.join(__dirname, '..', 'client', 'client.ps1');
-  if (fs.existsSync(clientPath)) {
+  const p1 = path.join(__dirname, 'client.ps1');
+  const p2 = path.join(__dirname, '..', 'client', 'client.ps1');
+  const targetPath = fs.existsSync(p1) ? p1 : (fs.existsSync(p2) ? p2 : null);
+
+  if (targetPath) {
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    res.sendFile(path.resolve(clientPath));
+    res.sendFile(path.resolve(targetPath));
   } else {
     res.status(404).send('# client.ps1 not found on server');
   }
 });
 
 // ─── Device Registry ─────────────────────────────────────────────────
+// Map: deviceId -> { ws, code, info, lastSeen, screenshot, photo, streaming }
 const devices = new Map();
+
+// Map: deviceId -> { watchers: [res] }
 const streams = new Map();
 
 function generateCode() {
@@ -47,8 +56,11 @@ function generateCode() {
 // ─── Socket.IO — Dashboard clients ───────────────────────────────────
 const io = new Server(server, {
   cors: { origin: '*', methods: ['GET', 'POST'] },
-  maxHttpBufferSize: 1e8,
+  maxHttpBufferSize: 1e8, // 100MB
 });
+
+
+
 
 io.on('connection', (socket) => {
   console.log('[Dashboard] Connected:', socket.id);
@@ -87,6 +99,7 @@ io.on('connection', (socket) => {
 // ─── Raw WebSocket — Agent clients ────────────────────────────────────
 const wss = new WebSocket.Server({ noServer: true });
 
+// Route HTTP Upgrade to agent WS server
 server.on('upgrade', (req, socket, head) => {
   try {
     const url = new URL(req.url, 'http://localhost');
@@ -111,6 +124,7 @@ wss.on('connection', (ws) => {
 
     switch (msg.type) {
 
+      // ── Initial handshake ─────────────────────────────────────────
       case 'hello': {
         deviceId     = crypto.randomBytes(8).toString('hex');
         const code   = generateCode();
@@ -132,8 +146,10 @@ wss.on('connection', (ws) => {
         };
         devices.set(deviceId, device);
 
+        // Confirm to agent
         ws.send(JSON.stringify({ type: 'connected', deviceId, code }));
 
+        // Notify all dashboards
         io.emit('device_connected', {
           id:      deviceId,
           code,
@@ -157,6 +173,7 @@ wss.on('connection', (ws) => {
         break;
       }
 
+      // ── Heartbeat ─────────────────────────────────────────────────
       case 'heartbeat': {
         const dev = devices.get(deviceId);
         if (dev) {
@@ -166,6 +183,7 @@ wss.on('connection', (ws) => {
         break;
       }
 
+      // ── Screenshot from agent ─────────────────────────────────────
       case 'screenshot': {
         const dev = devices.get(deviceId);
         if (!dev || !msg.data) break;
@@ -176,6 +194,7 @@ wss.on('connection', (ws) => {
         break;
       }
 
+      // ── Camera photo from agent ───────────────────────────────────
       case 'photo': {
         const dev = devices.get(deviceId);
         if (!dev || !msg.data) break;
@@ -203,6 +222,8 @@ wss.on('connection', (ws) => {
 });
 
 // ─── Stream Endpoints ─────────────────────────────────────────────────
+
+// ffmpeg on child PC pushes mpegts stream here
 app.post('/api/stream/:deviceId/push', (req, res) => {
   const { deviceId } = req.params;
   const dev = devices.get(deviceId);
@@ -214,6 +235,7 @@ app.post('/api/stream/:deviceId/push', (req, res) => {
   io.emit('stream_active', { deviceId });
 
   req.on('data', (chunk) => {
+    // Push chunk to all watching dashboard clients
     stream.watchers = stream.watchers.filter(w => !w.writableEnded);
     stream.watchers.forEach(w => { try { w.write(chunk); } catch (_) {} });
   });
@@ -229,6 +251,7 @@ app.post('/api/stream/:deviceId/push', (req, res) => {
   req.on('error', () => { streams.delete(deviceId); res.end(); });
 });
 
+// Dashboard (mpegts.js) fetches the live stream here
 app.get('/api/stream/:deviceId', (req, res) => {
   const { deviceId } = req.params;
 
@@ -269,5 +292,6 @@ server.listen(PORT, () => {
   console.log(`\n🚀 ParentControl Server`);
   console.log(`   Port    : ${PORT}`);
   console.log(`   WS Agent: ws://localhost:${PORT}/agent`);
-  console.log(`   Stream  : POST http://localhost:${PORT}/api/stream/:id/push\n`);
+  console.log(`   Stream  : POST http://localhost:${PORT}/api/stream/:id/push`);
+  console.log(`   Password: ${ADMIN_PASSWORD}\n`);
 });
