@@ -11,30 +11,8 @@
 </head>
 <body>
 
-<!-- ░░ LOGIN OVERLAY ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ -->
-<div id="login-overlay">
-  <div class="login-card glass">
-    <div class="login-logo">
-      <div class="logo-glow">🔒</div>
-      <h1>ParentControl</h1>
-      <p>Remote Monitoring Dashboard</p>
-    </div>
-    <div class="login-form">
-      <div class="field">
-        <label>Admin Password</label>
-        <input id="pw-input" type="password" placeholder="Enter password…" autocomplete="off" />
-      </div>
-      <button class="btn-login" id="login-btn" onclick="doLogin()">
-        Access Dashboard
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-      </button>
-      <p class="login-hint" id="login-error"></p>
-    </div>
-  </div>
-</div>
-
-<!-- ░░ MAIN APP ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ -->
-<div id="app" class="hidden">
+<!-- ░░ MAIN APP (NO LOGIN MODAL) ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ -->
+<div id="app">
 
   <!-- Header -->
   <header class="header glass">
